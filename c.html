@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Bulanık Hareket İzi</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+        }
+        canvas {
+            display: block;
+            transform: scaleX(-1);
+        }
+    </style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline style="display:none;"></video>
+<canvas id="canvas"></canvas>
+
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function tamEkranYap() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', tamEkranYap);
+    tamEkranYap();
+
+    navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(err => {
+            console.error("Kamera hatası:", err);
+            alert("Kameraya erişilemedi.");
+        });
+
+    video.addEventListener('loadedmetadata', () => {
+        cizimYap();
+    });
+
+    function cizimYap() {
+        // İZ EFEKTİ: Saydamlık
+        ctx.globalAlpha = 0.1; 
+
+        // YENİ: BULANIKLAŞTIRMA EFEKTİ
+        // '4px' değerini artırarak (örn: 10px) daha da bulanık yapabilirsin.
+        ctx.filter = 'blur(5px)';
+
+        const videoOrani = video.videoWidth / video.videoHeight;
+        const ekranOrani = canvas.width / canvas.height;
+        let cizimGenisligi, cizimYuksekligi, x, y;
+
+        if (videoOrani > ekranOrani) {
+            cizimYuksekligi = canvas.height;
+            cizimGenisligi = canvas.height * videoOrani;
+            x = (canvas.width - cizimGenisligi) / 2;
+            y = 0;
+        } else {
+            cizimGenisligi = canvas.width;
+            cizimYuksekligi = canvas.width / videoOrani;
+            x = 0;
+            y = (canvas.height - cizimYuksekligi) / 2;
+        }
+
+        ctx.drawImage(video, x, y, cizimGenisligi, cizimYuksekligi);
+
+        // Bir sonraki çizim döngüsü için filtreyi sıfırlıyoruz (güvenlik amaçlı)
+        ctx.filter = 'none';
+
+        requestAnimationFrame(cizimYap);
+    }
+</script>
+
+</body>
+</html>
